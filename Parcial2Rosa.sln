@@ -1,31 +1,67 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.5.33516.290
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Parcial2Rosa", "Parcial2Rosa\Parcial2Rosa.vcxproj", "{94F4B430-985A-4778-8F1D-77F675F3653D}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Debug|x64.ActiveCfg = Debug|x64
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Debug|x64.Build.0 = Debug|x64
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Debug|x86.ActiveCfg = Debug|Win32
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Debug|x86.Build.0 = Debug|Win32
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Release|x64.ActiveCfg = Release|x64
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Release|x64.Build.0 = Release|x64
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Release|x86.ActiveCfg = Release|Win32
-		{94F4B430-985A-4778-8F1D-77F675F3653D}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {94F92571-1B9E-4FBC-9D3A-D62BB9E51944}
-	EndGlobalSection
-EndGlobal
+#include <iostream>
+#include <fstream>
+#include <experimental/filesystem> // para C++17 o posterior
+#include <windows.h> // solo para Windows
+
+namespace fs = std::experimental::filesystem;
+
+// Función para crear archivos
+void crearArchivos(int numArchivos) {
+    // Determinar el subdirectorio y el formato de nombre de archivo en función del número de archivos
+    std::string subdirectorio, formatoNombreArchivo;
+    if (numArchivos % 2 == 0) {
+        subdirectorio = "Mis archivos/par";
+        formatoNombreArchivo = "archivo%d.txt";
+    }
+    else {
+        subdirectorio = "Escritorio/impar";
+        formatoNombreArchivo = "archivo%d.dat";
+    }
+
+    // Crear el subdirectorio si no existe
+    fs::create_directories(subdirectorio);
+
+    // Crear los archivos con el formato y el número de líneas especificados
+    for (int i = 1; i <= numArchivos; i++) {
+        std::string nombreArchivo = subdirectorio + "/" + sprintf(formatoNombreArchivo.c_str(), i);
+        std::ofstream archivo(nombreArchivo);
+        for (int j = 1; j <= i; j++) {
+            archivo << "Línea " << j << std::endl;
+        }
+        archivo.close();
+    }
+}
+
+// Función para agregar texto a los archivos creados
+void agregarTextoAArchivos() {
+    // Iterar sobre todos los archivos en los subdirectorios "par" e "impar"
+    for (auto& archivo : fs::recursive_directory_iterator(".")) {
+        // Verificar si el archivo es un archivo regular (no un directorio)
+        if (fs::is_regular_file(archivo)) {
+            // Obtener la extensión del archivo
+            std::string extension = archivo.path().extension().string();
+
+            // Verificar si el archivo está en el subdirectorio "par" y tiene la extensión ".txt"
+            if (archivo.path().parent_path().filename() == "par" && extension == ".txt") {
+                // Abrir el archivo en modo de apendice y agregar una nueva línea de texto
+                std::ofstream archivoSalida(archivo.path().string(), std::ios_base::app);
+                archivoSalida << "Esta es una línea de texto agregada al archivo " << archivo.path().filename().string() << std::endl;
+                archivoSalida.close();
+            }
+            // Verificar si el archivo está en el subdirectorio "impar" y tiene la extensión ".dat"
+            else if (archivo.path().parent_path().filename() == "impar" && extension == ".dat") {
+                // Abrir el archivo en modo de apendice y agregar dos nuevas líneas de texto
+                std::ofstream archivoSalida(archivo.path().string(), std::ios_base::app);
+                archivoSalida << "Esta es una línea de texto agregada al archivo " << archivo.path().filename().string() << std::endl;
+                archivoSalida << "Esta es otra línea de texto agregada al archivo " << archivo.path().filename().string() << std::endl;
+                archivoSalida.close();
+            }
+        }
+    }
+}
+
+// Función para encontrar el archivo más grande
+std::string encontrarArchivoMasGrande() {
+    // Inicializar el tamaño máximo de archivo a 0 y el nombre de archivo a una cadena vacía
+    DWORD tamanoMaximoArchivo = 0;
+    std::string nombreArchivoMaximo = "";
